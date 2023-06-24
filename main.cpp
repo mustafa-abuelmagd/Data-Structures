@@ -10,6 +10,12 @@ public:
     Node *previous = nullptr;
     static int length;
 
+    Node(int val) {
+        value = val;
+    }
+
+    Node() {}
+
     int getValue() const {
         return value;
     }
@@ -69,20 +75,15 @@ public:
 
 };
 
+
+
 int main() {
 
-    Node *head = new Node();
-    Node *second = new Node();
-    Node *third = new Node();
-    Node *fourth = new Node();
-    Node *tails = new Node();
-
-
-    head->setValue(1);
-    second->setValue(2);
-    third->setValue(3);
-    fourth->setValue(4);
-    tails->setValue(5);
+    Node *head = new Node(1);
+    Node *second = new Node(2);
+    Node *third = new Node(3);
+    Node *fourth = new Node(4);
+    Node *tails = new Node(5);
 
     head->setNext(second);
     second->setNext(third);
