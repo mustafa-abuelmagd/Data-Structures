@@ -161,13 +161,44 @@ public:
         debug_data.insert(debug_data.begin(), newNode);
     }
 
-    void delete_front() {
+    void delete_first() {
         Node *deletedHead = head;
-        cout << "Deleting node with value: " << deletedHead->value << endl;
         head = head->next;
-        debug_remove_node(deletedHead);
-        length--;
+        delete_node(deletedHead);
+        if (!head) tail = nullptr;
+        debug_verify_data_integrity();
+    }
 
+    void delete_last() {
+        if (length <= 1) {
+            delete_first();
+            return;
+        }
+        Node *newTail = get_nth(length - 1);
+        delete_node(tail);
+        tail = newTail;
+        tail->next = nullptr;
+        debug_verify_data_integrity();
+    }
+
+    void delete_nth(int idx) {
+        if (idx < 1 || idx > length) {
+            cout << "\nError:: Invalid index to delete \n";
+            return;
+        }
+        if (idx == 1) {
+            delete_first();
+            return;
+        }
+        if (idx == length) {
+            delete_last();
+            return;
+        }
+        Node *nth_previous = get_nth(idx - 1);
+        Node *nth = nth_previous->next;
+        nth_previous->next = nth_previous->next->next;
+        delete_node(nth);
+        debug_verify_data_integrity();
     }
 
     void print() {
@@ -198,7 +229,7 @@ public:
     }
 
     int get_nth_from_back(int idx) {
-        return get_nth(length - idx +1)->value;
+        return get_nth(length - idx + 1)->value;
     }
 
     bool is_same_node(Node *node1, Node *node2) {
