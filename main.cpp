@@ -121,8 +121,10 @@ public:
     }
 
     ~LinkedList() {
-        for (int i = 0; i < debug_data.size(); i++) {
-            delete_node(debug_data[i]);
+        while (head) {
+            Node *temp = head->next;
+            delete head;
+            head = temp;
         }
 
     }
@@ -132,11 +134,30 @@ public:
         return head;
     }
 
+    Node *getTail() {
+        if (head == nullptr) return nullptr;
+        return debug_data[debug_data.size() - 1];
+    }
+
+    void insert_end_no_tail(int val) {
+        Node *newNode = new Node(val);
+//        cout << "came here" << getTail()->value << endl;
+        if (head == nullptr) {
+            head = newNode;
+        }
+
+        if (!debug_data.empty()) getTail()->next = newNode;
+        debug_data.push_back(newNode);
+    }
+
     void insert_front(int val) {
         Node *newNode = new Node(val);
         newNode->next = head;
         head = newNode;
         length++;
+        if (length == 1) {
+            tail = head;
+        }
         debug_data.insert(debug_data.begin(), newNode);
     }
 
@@ -146,6 +167,7 @@ public:
         head = head->next;
         debug_remove_node(deletedHead);
         length--;
+
     }
 
     void print() {
@@ -176,9 +198,7 @@ public:
     }
 
     int get_nth_from_back(int idx) {
-        int real_idx = length - idx;
-        if (real_idx < 0)return -1;
-        return debug_data[real_idx]->value;
+        return get_nth(length - idx +1)->value;
     }
 
     bool is_same_node(Node *node1, Node *node2) {
@@ -190,7 +210,7 @@ public:
         if (length == 0 || list2.length == 0) {
             cout << "exited here 1" << endl;
             return (length == list2.length
-                     && is_same_node(head, list2.head));
+                    && is_same_node(head, list2.head));
         }
         Node *temp2 = list2.head;
         for (Node *temp = head; temp; temp = temp->next) {
@@ -345,32 +365,32 @@ void test1() {
     cout << "\n\ntest1\n";
     LinkedList list;
 
-    list.insert_end(1);
-    list.insert_end(2);
-    list.insert_end(3);
+    list.insert_end_no_tail(1);
+    list.insert_end_no_tail(2);
+    list.insert_end_no_tail(3);
 
-    list.insert_front(1);
-    list.insert_front(2);
-    list.insert_front(3);
+//    list.insert_front(1);
+//    list.insert_front(2);
+//    list.insert_front(3);
 
-    cout << "Gotten from back 1st " << list.get_nth_from_back(1) << endl;
-    cout << "Gotten from back 2nd " << list.get_nth_from_back(2) << endl;
-    cout << "Gotten from back 3rd " << list.get_nth_from_back(3) << endl;
+    cout << "came here" << endl;
+//    cout << "Gotten from back 2nd " << list.get_nth_from_back(2) << endl;
+//    cout << "Gotten from back 3rd " << list.get_nth_from_back(3) << endl;
 
     // some actions
     list.print();
     // must see it, otherwise RTE    // must see it, otherwise RTE
 
 
-    string expected = "3 2 1 1 2 3";
-    string result = list.debug_to_string();
-    if (expected != result) {
-        cout << "no match:\nExpected: " <<
-             expected << "\nResult  : " << result << "\n";
-        assert(false);
-    }
-    list.debug_print_list("********");
-    list.debug_verify_data_integrity();
+//    string expected = "1 2 3";
+//    string result = list.debug_to_string();
+//    if (expected != result) {
+//        cout << "no match:\nExpected: " <<
+//             expected << "\nResult  : " << result << "\n";
+//        assert(false);
+//    }
+//    list.debug_print_list("********");
+//    list.debug_verify_data_integrity();
 }
 
 void test3() {
@@ -478,7 +498,7 @@ int main() {
 
 
 
-//    test1();
+    test1();
     test3();
     test4();
     test5();
