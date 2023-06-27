@@ -102,6 +102,10 @@ private:
         debug_data.push_back(node);
     }
 
+    void debug_add_node_pos(Node *node, int idx) {
+        debug_data.insert(debug_data.begin() + idx, node);
+    }
+
     void debug_remove_node(Node *node) {
         auto it = std::find(debug_data.begin(), debug_data.end(), node);
         if (it == debug_data.end())
@@ -119,6 +123,10 @@ public:
         tail = temp_head;
         length++;
     }
+
+    LinkedList(const LinkedList &) = delete;
+
+    LinkedList &operator=(const LinkedList &another) = delete;
 
     ~LinkedList() {
         while (head) {
@@ -150,8 +158,7 @@ public:
         debug_data.push_back(newNode);
     }
 
-    void insert_front(int val) {
-        Node *newNode = new Node(val);
+    void insert_front(Node *newNode) {
         newNode->next = head;
         head = newNode;
         length++;
@@ -181,6 +188,23 @@ public:
         debug_verify_data_integrity();
     }
 
+    void detach_head() {
+        Node *deletedHead = head;
+        head = head->next;
+        deletedHead->next = nullptr;
+        if (!head) tail = nullptr;
+        debug_remove_node(deletedHead);
+        --length;
+    }
+
+    void detach_tail() {
+        Node *newTail = get_nth(length - 1);
+        tail = newTail;
+        tail->next = nullptr;
+        debug_remove_node(tail);
+        --length;
+    }
+
     void delete_nth(int idx) {
         if (idx < 1 || idx > length) {
             cout << "\nError:: Invalid index to delete \n";
@@ -201,6 +225,270 @@ public:
         debug_verify_data_integrity();
     }
 
+    void delete_next_node(Node *node) {
+        Node *node_to_delete = node->next;
+        node->next = node_to_delete->next;
+        if (is_same_node(node_to_delete, tail)) {
+            delete_last();
+            return;
+        }
+        delete_node(node_to_delete);
+    }
+
+    void delete_by_key(int val) { //O(n) time, o(1) space
+        if (!head) {
+            cout << "Error:: LinkedList is empty\n";
+            return;
+        }
+        int itr = 1;
+
+        for (Node *curr = head; curr; curr = curr->next, itr++) {
+            if (curr->value == val) {
+                delete_nth(itr);
+                return;
+            }
+        }
+        cout << "Error: No key found" << endl;
+        debug_verify_data_integrity();
+    }
+
+    int get_by_key(int val) { //O(n) time, o(1) space
+        int itr = 0;
+        for (Node *curr = head; curr; curr = curr->next, itr++) {
+            if (curr->value == val) return itr;
+        }
+    }
+
+    void delete_by_key_alt(int val) {
+        if (!head) {
+            cout << "Error:: LinkedList is empty\n";
+            return;
+        }
+
+        for (Node *curr = head; curr; curr = curr->next) {
+            if (curr->next->value == val) {
+                delete_next_node(curr->next);
+                return;
+            }
+        }
+        cout << "Error: No key found" << endl;
+        debug_verify_data_integrity();
+    }
+
+    void swap_pairs() {
+        if (!head) {
+            cout << "Error:: LinkedList is empty\n";
+            return;
+        }
+        for (Node *curr = head; curr; curr = curr->next->next) {
+            if (curr->next != nullptr) {
+                int temp = curr->value;
+                curr->value = curr->next->value;
+                curr->next->value = temp;
+            }
+            if (!curr->next)return;
+        }
+        cout << "STATE:: came here\n";
+
+        debug_verify_data_integrity();
+    }
+
+    void swap_pairs_alt() {
+        if (!head) {
+            cout << "Error:: LinkedList is empty\n";
+            return;
+        }
+        for (Node *curr = head; curr; curr = curr->next) {
+            if (curr->next) {
+                swap(curr->next->value, curr->value);
+                curr = curr->next;
+            }
+        }
+        cout << "STATE:: came here\n";
+
+        debug_verify_data_integrity();
+    }
+
+    void reverse() {
+        if (length == 0) {
+            cout << "ERROR:: No Nodes Dummy!" << endl;
+            return;
+        }
+        if (length == 1) {
+            cout << "ERROR:: length of one Linked lists are the same when reversed" << endl;
+            return;
+        }
+        head->next = nullptr;
+        for (int i = 1; i < length; i++) { // We used one since we're linking backwards. 1->0, 0->-1 is wrong
+            debug_data[i]->next = debug_data[i - 1];
+        }
+        std::reverse(debug_data.begin(), debug_data.end());
+        Node *tempNode = head;
+        head = tail;
+        tail = tempNode;
+        print();
+        debug_verify_data_integrity();
+    }
+
+    void reverse_alt() {
+        if (length == 0) { cout << "Empty list\n"; }
+        if (length == 1) { cout << "Head is tail and tail is head\n"; }
+        tail = head;
+        Node *prev = head;
+        while (head) {
+            Node *next = head->next;
+            head->next = prev;
+
+            prev = head;
+            head = next;
+        }
+        head = prev;
+        tail->next = nullptr;
+        debug_verify_data_integrity();
+
+    }
+
+    void delete_even_positions() {
+        if (length <= 1) {
+            cout << "Invalid Operation\n";
+            return;
+        }
+        for (Node *temp = head; temp; temp = temp->next) {
+            if (temp->next) {
+                delete_next_node(temp);
+            }
+        }
+        debug_verify_data_integrity();
+    }
+
+    void delete_even_positions_alt() {
+        if (length <= 1) {
+            cout << "Invalid Operation\n";
+            return;
+        }
+        for (Node *curr = head->next, *prev = head; curr;) {
+            delete_next_node(prev);
+            if (!prev->next) {
+                break;
+            }
+            curr = prev->next->next;
+            prev = prev->next;
+        }
+        debug_verify_data_integrity();
+    }
+
+    void insert_node_between(Node *node1, Node *node2, Node *newNode) {
+        if (!node1) insert_front(newNode);
+
+        else if (!node2) insert_end(newNode);
+
+        else {
+            newNode->next = node2;
+            node1->next = newNode;
+            add_node_pos(newNode, get_by_key(newNode->value));
+        }
+        return;
+    }
+
+    void insert_sorted(Node *newNode) {
+        if (length == 0) insert_end(newNode);
+
+        else if (length == 1) {
+            if (head->value > newNode->value) insert_front(newNode);
+            else insert_end(newNode);
+        } else {
+            for (Node *curr = head->next, *prv = head; curr;) {
+                if (prv->value > newNode->value) {
+                    insert_node_between(nullptr, curr, newNode);
+                    break;
+                } else if (is_same_node(curr, tail) && curr->value < newNode->value) {
+                    insert_node_between(prv, nullptr, newNode);
+                    break;
+                } else if (prv->value < newNode->value && newNode->value < curr->value) {
+                    insert_node_between(prv, curr, newNode);
+                    break;
+                }
+
+                curr = prv->next->next;
+                prv = prv->next;
+
+            }
+        }
+        debug_verify_data_integrity();
+    }
+
+    void swap_head_and_tail() {
+        if (!length)return;
+        else if (length == 1) {
+            cout << "Already done\n";
+            return;
+        } else {
+            Node *prv_head = head;
+            Node *prv_tail = tail;
+            detach_tail();
+            detach_head();
+            cout << "prv head is " << prv_head->value << "and next is" << prv_head->next << endl;
+            cout << "prv tail is " << prv_tail->value << "and next is" << prv_tail->next << endl;
+            insert_front(prv_tail);
+            insert_end(prv_head);
+        }
+        debug_verify_data_integrity();
+    }
+
+    void rotate_k_times(int k) {
+        int actual_k = k % length;
+        for (int i = 0; i < actual_k; i++) {
+            rotate_once();
+        }
+    }
+
+    void rotate_once() {
+        Node *newTail = get_previous(tail);
+        tail->next = head;
+        head = newTail->next;
+        tail = newTail;
+        tail->next = nullptr;
+        debug_data.insert(debug_data.begin(), head);
+        debug_data.erase(debug_data.end() - 1);
+    }
+
+    void remove_duplicates() {
+        for (Node *curr = head; curr; curr = curr->next) {
+            for (Node *curr2 = head; curr2; curr2 = curr2->next) {
+                if (curr2->next && curr2->next->value == curr->value) {
+                    delete_next_node(curr2);
+                }
+            }
+        }
+        debug_verify_data_integrity();
+    }
+
+
+    Node *get_previous(Node *target) {        // O(n) time - O(1) memory
+        for (Node *cur = head, *prv = nullptr; cur; prv = cur, cur = cur->next) {
+            if (cur == target)    // memory wise
+                return prv;
+        }
+        return nullptr;    // still more steps needed - NOT found
+    }
+
+    void swap_head_and_tail_alt() {
+        if (!length)return;
+        else if (length == 1) {
+            cout << "Already done\n";
+            return;
+        } else {
+            Node *prv_head = head;
+            tail->next = head->next;
+            Node *pTail = get_previous(tail);
+            pTail->next = head;
+            head->next = nullptr;
+            head = tail;
+            tail = prv_head;
+        }
+        debug_verify_data_integrity();
+    }
+
     void print() {
         for (Node *cur = head; cur; cur = cur->next)
             cout << cur->value << " ";
@@ -218,8 +506,12 @@ public:
         ++length;
     }
 
-    void insert_end(int value) {
-        Node *item = new Node(value);
+    void add_node_pos(Node *node, int idx) {
+        debug_add_node_pos(node, idx);
+        ++length;
+    }
+
+    void insert_end(Node *item) {
         add_node(item);
 
         if (!head)
@@ -320,10 +612,6 @@ public:
         return -1;
     }
 
-    LinkedList(const LinkedList &) = delete;
-
-    LinkedList &operator=(const LinkedList &another) = delete;
-
     void debug_print_address() {
         for (Node *cur = head; cur; cur = cur->next)
             cout << cur << "," << cur->value << "\t";
@@ -392,28 +680,29 @@ public:
     }
 };
 
-void test1() {
-    cout << "\n\ntest1\n";
-    LinkedList list;
-
-    list.insert_end_no_tail(1);
-    list.insert_end_no_tail(2);
-    list.insert_end_no_tail(3);
-
-//    list.insert_front(1);
-//    list.insert_front(2);
-//    list.insert_front(3);
-
-    cout << "came here" << endl;
-//    cout << "Gotten from back 2nd " << list.get_nth_from_back(2) << endl;
-//    cout << "Gotten from back 3rd " << list.get_nth_from_back(3) << endl;
-
-    // some actions
-    list.print();
-    // must see it, otherwise RTE    // must see it, otherwise RTE
-
-
-//    string expected = "1 2 3";
+//void test1() {
+//    cout << "\n\ntest1\n";
+//    LinkedList list;
+//
+//    list.insert_end(1);
+//    list.insert_end(2);
+//    list.insert_end(3);
+//    list.insert_end(4);
+//    list.insert_end(5);
+//
+//    list.delete_first();
+//    list.delete_last();
+//    list.delete_nth(2);
+//
+//
+//    cout << "came here" << endl;
+//
+//    // some actions
+//    list.print();
+//    // must see it, otherwise RTE    // must see it, otherwise RTE
+//
+//
+//    string expected = "2 4";
 //    string result = list.debug_to_string();
 //    if (expected != result) {
 //        cout << "no match:\nExpected: " <<
@@ -421,28 +710,24 @@ void test1() {
 //        assert(false);
 //    }
 //    list.debug_print_list("********");
-//    list.debug_verify_data_integrity();
-}
+//}
 
 void test3() {
     cout << "\n\ntest3\n";
     LinkedList list;
 
-    list.insert_end(1);
-    list.insert_end(2);
-    list.insert_end(3);
+    list.insert_end(new Node(0));
+    list.insert_end(new Node(2));
+    list.insert_end(new Node(2));
+    list.insert_end(new Node(4));
+    list.insert_end(new Node(4));
+    list.insert_end(new Node(6));
+    list.insert_end(new Node(6));
+    list.insert_end(new Node(7));
 
-    LinkedList list2;
-    list2.insert_end(1);
-    list2.insert_end(2);
-    list2.insert_end(3);
-    // some actions
-    list.is_same_no_len_or_tail(list2);
-    // must see it, otherwise RTE    // must see it, otherwise RTE
-
-
-    string expected = list.debug_to_string();
-    string result = list2.debug_to_string();
+    list.remove_duplicates();
+    string expected = "0 2 4 6 7";
+    string result = list.debug_to_string();
     if (expected != result) {
         cout << "no match:\nExpected: " <<
              expected << "\nResult  : " << result << "\n";
@@ -450,89 +735,13 @@ void test3() {
     }
     list.debug_print_list("********");
     list.debug_verify_data_integrity();
-}
-
-void test4() {
-    cout << "\n\ntest4\n";
-    LinkedList list;
-
-    list.insert_end(1);
-    list.insert_end(2);
-    list.insert_end(3);
-    list.insert_end(4);
-
-    LinkedList list2;
-    list2.insert_end(1);
-    list2.insert_end(2);
-    list2.insert_end(3);
-    list2.insert_end(4);
-
-    // some actions
-    cout << "result 1 is " << list.is_same(list2) << endl;
-    bool result1 = list.is_same_no_len_or_tail(list2);
-    assert (result1);
-
-
-    string expected = list.debug_to_string();
-    string result = list2.debug_to_string();
-    if (expected != result) {
-        cout << "no match:\nExpected: " <<
-             expected << "\nResult  : " << result << "\n";
-        assert(false);
-    }
-    list.debug_print_list("********");
-    list2.debug_print_list("********");
-    list.debug_verify_data_integrity();
-}
-
-void test5() {
-    cout << "\n\ntest5\n";
-    LinkedList list;
-
-
-    LinkedList list2;
-    cout << "Not here " << "\n";
-    bool result1 = list.is_same_no_len_or_tail(list2);
-    cout << "might come here with result " << result1 << "\n";
-    if (!result1) {
-        cout << "can it be here? " << result1 << "\n";
-
-        assert (false);
-    }
-
-
-//    string expected = list.debug_to_string();
-//    string result = list2.debug_to_string();
-//    if (expected != result) {
-//        cout << "no match:\nExpected: " <<
-//             expected << "\nResult  : " << result << "\n";
-//        assert(false);
-//    }
-//    list.debug_print_list("********1");
-//    list2.debug_print_list("********2");
-    list.debug_verify_data_integrity();
-    list2.debug_verify_data_integrity();
 }
 
 
 int main() {
-
-//    LinkedList *firstLinkedList = new LinkedList();
-//    firstLinkedList->insert_node(1);
-//    firstLinkedList->insert_node(2);
-//    firstLinkedList->insert_node(3);
-//    firstLinkedList->insert_node(4);
-//    firstLinkedList->insert_node(5);
-//    firstLinkedList->insert_node(6);
-//    firstLinkedList->insert_node(7);
-//    firstLinkedList->insert_node(8);
-
-
-
-    test1();
+//    test1();
     test3();
-    test4();
-    test5();
+//    test4();
     cout << "\n\nNO RTE\n";
     return 0;
 }
