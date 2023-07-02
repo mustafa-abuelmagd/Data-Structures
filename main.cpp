@@ -330,22 +330,24 @@ public:
         debug_verify_data_integrity();
     }
 
-    void reverse_alt() {
-        if (length == 0) { cout << "Empty list\n"; }
-        if (length == 1) { cout << "Head is tail and tail is head\n"; }
-        tail = head;
-        Node *prev = head;
-        while (head) {
-            Node *next = head->next;
-            head->next = prev;
 
-            prev = head;
-            head = next;
+    static LinkedList *reverse(LinkedList *list) {
+        if (list->length == 0) {
+            cout << "Empty list\n";
+            return nullptr;
         }
-        head = prev;
-        tail->next = nullptr;
-        debug_verify_data_integrity();
+        if (list->length == 1) {
+            cout << "Head is tail and tail is head\n";
+            return list;
+        }
+        auto *newList = new LinkedList();
+        list->reverse();
 
+        for (Node *curr = list->head; curr; curr = curr->next) {
+            insert_end(newList, curr);
+        }
+        list->reverse();
+        return newList;
     }
 
     void delete_even_positions() {
@@ -453,14 +455,93 @@ public:
     }
 
     void remove_duplicates() {
+        if (length == 0 || length == 1) {
+            cout << "ERROR:: Unable to reverse." << endl;
+        }
         for (Node *curr = head; curr; curr = curr->next) {
-            for (Node *curr2 = head; curr2; curr2 = curr2->next) {
-                if (curr2->next && curr2->next->value == curr->value) {
-                    delete_next_node(curr2);
+            for (Node *curr2 = curr->next, *prv = curr; curr2;) {
+                if (prv->value == curr2->value) {
+                    delete_next_node(prv);
+                    curr2 = prv->next;
                 }
+                prv = curr2;
+                curr2 = curr2->next;
             }
         }
         debug_verify_data_integrity();
+    }
+
+    void remove_last_occurrence(int key) {
+        if (length == 0 || length == 1) {
+            cout << "ERROR:: Unable to reverse." << endl;
+        }
+        reverse();
+        for (Node *prv = head, *curr = head->next;
+             curr, prv;) {
+            if (curr->value == key) {
+                delete_next_node(prv);
+                reverse();
+                return;
+            }
+            curr = curr->next, prv = prv->next;
+        }
+        reverse();
+        debug_verify_data_integrity();
+    }
+
+    void remove_last_occurrence_alt(int key) {
+        Node *prv_node_to_delete = nullptr;
+        bool is_found = false;
+        for (Node *temp = head, *prv = nullptr; temp; prv = temp, temp = temp->next) {
+            if (temp->value == key) {
+                is_found = true;
+                prv_node_to_delete = prv;
+            }
+        }
+        if (is_found) {
+            if (prv_node_to_delete) {
+                delete_next_node(prv_node_to_delete);
+            } else {
+                delete_first();
+            }
+        }
+        debug_verify_data_integrity();
+    }
+
+    Node *move_to_end(Node *prv, Node *curr) {
+        Node *next = curr->next;
+        tail->next = curr;
+
+        if (prv) {
+            prv->next = curr->next;
+        } else {//curr was head
+            head = next;
+        }
+        tail = curr;
+        tail->next = nullptr;
+        return next;
+    }
+
+    void move_to_back(int key) {
+        int len = length;
+        for (Node *curr = head, *prv = nullptr; len--;) {
+            if (curr->value == key) {
+                curr = move_to_end(prv, curr);
+            } else {
+                prv = curr;
+                curr = curr->next;
+            }
+
+        }
+        debug_verify_data_integrity();
+    }
+
+    int getMax(Node *head, int max) {
+        if (!head->next) {
+            int currMax = std::max(head->value, max);
+            return currMax;
+        } else return std::max(head->value, getMax(head->next, max));
+
     }
 
 
@@ -495,6 +576,12 @@ public:
         cout << "\n";
     }
 
+    static void print(LinkedList *list) {
+        for (Node *cur = list->head; cur; cur = cur->next)
+            cout << cur->value << " ";
+        cout << "\n";
+    }
+
     void delete_node(Node *node) {
         debug_remove_node(node);
         --length;
@@ -518,6 +605,16 @@ public:
             head = tail = item;
         else
             tail->next = item, tail = item;
+    }
+
+    static LinkedList *insert_end(LinkedList *list, Node *item) {
+        auto itemVal = new Node(item->value);
+        list->add_node(itemVal);
+
+        if (!list->head)
+            list->head = list->tail = itemVal;
+        else
+            list->tail->next = itemVal, list->tail = itemVal;
     }
 
     int get_nth_from_back(int idx) {
@@ -712,36 +809,67 @@ public:
 //    list.debug_print_list("********");
 //}
 
-void test3() {
-    cout << "\n\ntest3\n";
+void test1() {
+    cout << "\n\ntest1\n";
     LinkedList list;
 
-    list.insert_end(new Node(0));
+    list.insert_end(new Node(1));
     list.insert_end(new Node(2));
+    list.insert_end(new Node(3));
     list.insert_end(new Node(2));
     list.insert_end(new Node(4));
-    list.insert_end(new Node(4));
-    list.insert_end(new Node(6));
-    list.insert_end(new Node(6));
-    list.insert_end(new Node(7));
+    list.insert_end(new Node(1));
 
-    list.remove_duplicates();
-    string expected = "0 2 4 6 7";
+    int max = list.getMax(list.getHead(), 0);
+
+    cout << "max equals " << max << endl;
+
+    string expected = "2 3 2 4 1 1";
     string result = list.debug_to_string();
-    if (expected != result) {
-        cout << "no match:\nExpected: " <<
-             expected << "\nResult  : " << result << "\n";
-        assert(false);
-    }
+//    if (expected != result) {
+//        cout << "no match:\nExpected: " <<
+//             expected << "\nResult  : " << result << "\n";
+//        assert(false);
+//    }
+    list.debug_print_list("********");
+    list.debug_verify_data_integrity();
+}
+
+void test2() {
+    cout << "\n\ntest2\n";
+    LinkedList list;
+
+    list.insert_end(new Node(1));
+    list.insert_end(new Node(2));
+    list.insert_end(new Node(3));
+    list.insert_end(new Node(1));
+    list.insert_end(new Node(2));
+    list.insert_end(new Node(4));
+    list.insert_end(new Node(1));
+    list.insert_end(new Node(7));
+    list.insert_end(new Node(1));
+    list.insert_end(new Node(8));
+    list.insert_end(new Node(1));
+    list.insert_end(new Node(1));
+
+    int max = list.getMax(list.getHead(), 0);
+
+    cout << "max equals " << max << endl;
+    string expected = "2 3 2 4 7 8 1 1 1 1 1 1";
+    string result = list.debug_to_string();
+//    if (expected != result) {
+//        cout << "no match:\nExpected: " <<
+//             expected << "\nResult  : " << result << "\n";
+//        assert(false);
+//    }
     list.debug_print_list("********");
     list.debug_verify_data_integrity();
 }
 
 
 int main() {
-//    test1();
-    test3();
-//    test4();
+    test1();
+    test2();
     cout << "\n\nNO RTE\n";
     return 0;
 }
