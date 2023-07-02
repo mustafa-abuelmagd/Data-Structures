@@ -544,6 +544,52 @@ public:
 
     }
 
+    // Homework 4
+    // Arrange Odd positions to the first
+    void arrange_odd_positions() {
+        if (length <= 2)return;
+        Node *tempTail = head; // use to insert node between or insert after
+        for (Node *prv = head; prv; prv = prv->next) {
+            if (prv != head && prv->next) {
+                Node *detached = detach_next_node(prv);
+                insert_node_between(tempTail, tempTail->next, detached);
+                tempTail = tempTail->next;
+            }
+
+        }
+        debug_verify_data_integrity();
+    }
+
+    void arrange_odd_even() {
+        if (length <= 2)return;
+        Node *curr_odd = head;
+        Node *curr_even = head->next;
+        while (curr_odd->next && curr_odd->next->next) {
+            Node *next_even = curr_odd->next;
+            curr_odd->next = curr_odd->next->next;
+            next_even->next = next_even->next->next;
+            curr_odd = curr_odd->next;
+            if (length % 2 == 1) {
+                tail = next_even;
+            }
+        }
+        curr_odd->next = curr_even;
+        debug_verify_data_integrity();
+
+    }
+
+    Node *detach_next_node(Node *node) {
+        Node *node_to_detach = node->next;
+        node->next = node_to_detach->next;
+        if (is_same_node(node_to_detach, tail)) {
+            node->next = nullptr;
+            detach_node(node_to_detach);
+            return node_to_detach;
+        }
+        detach_node(node_to_detach);
+        return node_to_detach;
+    }
+
 
     Node *get_previous(Node *target) {        // O(n) time - O(1) memory
         for (Node *cur = head, *prv = nullptr; cur; prv = cur, cur = cur->next) {
@@ -588,6 +634,12 @@ public:
         delete node;
     }
 
+    void detach_node(Node *node) {
+        debug_remove_node(node);
+        --length;
+    }
+
+
     void add_node(Node *node) {
         debug_add_node(node);
         ++length;
@@ -622,7 +674,7 @@ public:
     }
 
     bool is_same_node(Node *node1, Node *node2) {
-        if (node1 && node2) return node1->value == node2->value;
+        if (node1 && node2) return (node1->value == node2->value) && (node1 == node2);
         if (!node1) return !node2;
     }
 
@@ -815,24 +867,23 @@ void test1() {
 
     list.insert_end(new Node(1));
     list.insert_end(new Node(2));
+
     list.insert_end(new Node(3));
     list.insert_end(new Node(2));
+
     list.insert_end(new Node(4));
     list.insert_end(new Node(1));
 
-    int max = list.getMax(list.getHead(), 0);
-
-    cout << "max equals " << max << endl;
-
-    string expected = "2 3 2 4 1 1";
+    list.arrange_odd_even();
+    string expected = "1 3 4 2 2 1";
     string result = list.debug_to_string();
-//    if (expected != result) {
-//        cout << "no match:\nExpected: " <<
-//             expected << "\nResult  : " << result << "\n";
-//        assert(false);
-//    }
+    if (expected != result) {
+        cout << "no match:\nExpected: " <<
+             expected << "\nResult  : " << result << "\n";
+        assert(false);
+    }
     list.debug_print_list("********");
-    list.debug_verify_data_integrity();
+//    list.debug_verify_data_integrity();
 }
 
 void test2() {
@@ -841,29 +892,33 @@ void test2() {
 
     list.insert_end(new Node(1));
     list.insert_end(new Node(2));
+
     list.insert_end(new Node(3));
     list.insert_end(new Node(1));
+
     list.insert_end(new Node(2));
     list.insert_end(new Node(4));
+
     list.insert_end(new Node(1));
     list.insert_end(new Node(7));
+
     list.insert_end(new Node(1));
     list.insert_end(new Node(8));
+
     list.insert_end(new Node(1));
     list.insert_end(new Node(1));
+    list.arrange_odd_even();
 
-    int max = list.getMax(list.getHead(), 0);
 
-    cout << "max equals " << max << endl;
-    string expected = "2 3 2 4 7 8 1 1 1 1 1 1";
+    string expected = "1 3 2 1 1 1 2 1 4 7 8 1";
     string result = list.debug_to_string();
-//    if (expected != result) {
-//        cout << "no match:\nExpected: " <<
-//             expected << "\nResult  : " << result << "\n";
-//        assert(false);
-//    }
+    if (expected != result) {
+        cout << "no match:\nExpected: " <<
+             expected << "\nResult  : " << result << "\n";
+        assert(false);
+    }
     list.debug_print_list("********");
-    list.debug_verify_data_integrity();
+//    list.debug_verify_data_integrity();
 }
 
 
