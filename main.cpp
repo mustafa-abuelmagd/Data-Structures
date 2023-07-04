@@ -5,6 +5,8 @@
 #include <vector>        // for debug
 #include <algorithm>
 #include <sstream>
+#include <chrono>
+
 
 using namespace std;
 
@@ -330,6 +332,21 @@ public:
         debug_verify_data_integrity();
     }
 
+    void reverse_alt() {
+        if (length <= 1) return;
+
+        Node *prv = nullptr;
+        for (Node *crr = head; crr;) {
+            Node *nxt = crr->next;
+            crr->next = prv;
+            prv = crr;
+            crr = nxt;
+        }
+        tail = head;
+        head = prv;
+        debug_verify_data_integrity();
+    }
+
 
     static LinkedList *reverse(LinkedList *list) {
         if (list->length == 0) {
@@ -590,6 +607,199 @@ public:
         return node_to_detach;
     }
 
+    // problem 2  insert alternating
+    void insert_alternating(LinkedList &list) {
+        int itr = 1;
+        Node *curr_new_list = list.head;
+        for (Node *curr = head; curr; itr++) {
+            if (curr_new_list->next && curr->next) {
+                Node *tempNode = curr->next;
+                Node *tempNode2 = curr_new_list->next;
+                curr->next = curr_new_list;
+                curr_new_list->next = tempNode;
+                debug_data.insert(debug_data.begin() + itr, curr_new_list);
+
+                curr = tempNode;
+                curr_new_list = tempNode2;
+            } else {
+                if (!curr_new_list->next && curr->next) {
+                    Node *tempNode = curr->next;
+                    curr->next = curr_new_list;
+                    curr_new_list->next = tempNode;
+                    debug_data.insert(debug_data.begin() + ++itr, curr_new_list);
+                    break;
+                } else if (!curr->next && curr_new_list->next) {
+                    curr->next = curr_new_list;
+                    tail = list.tail;
+                    debug_data.insert(debug_data.begin() + ++itr, list.debug_data.size() - itr, curr_new_list);
+                    break;
+                } else {
+                    curr->next = curr_new_list;
+                    debug_data.insert(debug_data.begin() + ++itr, list.debug_data.size() - itr + 1, curr_new_list);
+                    tail = list.tail;
+                    break;
+                }
+
+            }
+        }
+        list.tail = nullptr;
+        list.head = nullptr;
+
+        length += list.length;
+        debug_verify_data_integrity();
+
+    }
+
+    // problem 3 adding two huge numbers
+
+    void add_huge_numbers(LinkedList &another) {
+        // { 1, 2, 3}
+        // another =  {4, 5, 6}
+        int length_diff = length - another.length;
+        if (length_diff > 0) {
+            for (int i = 0; i < length_diff; i++) {
+                another.insert_end(new Node(0));
+            }
+        }
+        if (length_diff < 0) {
+            for (int i = 0; i < std::abs(length_diff); i++) {
+                insert_end(new Node(0));
+            }
+        }
+
+        int carry = 0;
+        Node *curr2 = another.head;
+        for (Node *curr = head; curr; curr2) {
+            if (!(curr && curr2)) {
+                break;
+            }
+            int value = (curr->value + curr2->value);
+            curr->value = carry + (value % 10);
+            carry = value / 10;
+
+            curr = curr->next;
+            curr2 = curr2->next;
+
+        }
+        insert_end(new Node(carry));
+        reverse();
+
+        for (Node *temp = head; temp; temp = temp->next) {
+            if (temp->value == 0) {
+                Node *nextNode = temp->next;
+                delete_first();
+                temp = nextNode;
+            }
+        }
+    }
+
+    // problem 4 delete all repeated
+    void delete_all_repeated_sorted() {
+        if (length < 2)return;
+        bool is_prv_repeated = false;
+        for (Node *crr = head->next, *prv = head, *prv_prv = nullptr; crr;) {
+            if (prv->value == crr->value) {
+                // 1- delete next node & set is_prv_repeated -> true
+                delete_next_node(prv);
+                is_prv_repeated = true;
+                crr = prv;
+            } else {
+                if (is_prv_repeated) {
+                    // if the first: meaning the prv_prv is nullptr -> delete head
+                    if (!prv_prv) { // delete head, keep this null, prv = head
+                        delete_first();
+                        prv = head;
+                    } else { // this means that it's repeated, but not the first node,,,, delete next, update prv
+                        delete_next_node(prv_prv);
+                        prv = prv_prv->next;
+                    }
+                    // reset is_prv_repeated -> false again
+                    is_prv_repeated = false;
+                } else {
+                    prv_prv = prv;
+                    prv = crr;
+                }
+            }
+            crr = crr->next;
+        }
+        if (length == 1 && is_prv_repeated)delete_first();
+    }
+
+    Node *move_and_delete(Node *node) {
+        Node *temp = node->next;
+        delete_node(node);
+        return temp;
+    }
+
+    void remove_all_repeated_from_sorted() {    // O(n) time - O(1) memory
+        if (length <= 1)
+            return;
+
+        // Add dummy head for easier prv linking
+        insert_front(new Node(-1234));
+
+        tail = head;
+        Node *previous = head;
+        Node *cur = head->next;    // Our actual head
+
+        while (cur) {
+            // 2 cases: Either blocks of repeated so remove it. Or single node, keep it
+
+            // keep removing blocks of SAME value
+            bool any_removed = false;
+            while (cur && cur->next && cur->value == cur->next->value) {
+                int block_value = cur->value;
+                any_removed = true;
+                while (cur && cur->value == block_value)
+                    cur = move_and_delete(cur);
+            }
+            if (any_removed) {
+                if (!cur)
+                    tail = previous;
+                previous->next = cur;    // link after the removed nodes
+                previous = cur;
+            } else {
+                // No duplicates. Connect and use as tail for now
+                tail = cur;
+                previous = cur;
+                cur = cur->next;
+            }
+        }
+        previous = head->next;    // actual head
+        delete_first();        // remove dummy head
+        head = previous;
+        if (!head)
+            tail = head;
+        debug_verify_data_integrity();
+    }
+
+
+    void remove_all_repeated_alt() {
+        if (length < 2)return;
+
+        insert_front(new Node(-1234));
+        tail = head;
+        Node *prv = head;
+        Node *curr = head->next;
+
+        while (curr) {
+            bool any_removed = false;
+            while (curr && curr->next && curr->value == curr->next->value) {
+                any_removed = true;
+                int block_value = curr->value;
+                while (curr->value == block_value) {
+                    curr = move_and_delete(curr);
+                }
+            }
+
+            if (any_removed) {
+
+
+            } else {}
+        }
+
+
+    }
 
     Node *get_previous(Node *target) {        // O(n) time - O(1) memory
         for (Node *cur = head, *prv = nullptr; cur; prv = cur, cur = cur->next) {
@@ -867,15 +1077,14 @@ void test1() {
 
     list.insert_end(new Node(1));
     list.insert_end(new Node(2));
-
     list.insert_end(new Node(3));
-    list.insert_end(new Node(2));
-
     list.insert_end(new Node(4));
-    list.insert_end(new Node(1));
+    list.insert_end(new Node(5));
+    list.insert_end(new Node(6));
 
-    list.arrange_odd_even();
-    string expected = "1 3 4 2 2 1";
+
+    list.reverse_alt();
+    string expected = "6 5 4 3 2 1";
     string result = list.debug_to_string();
     if (expected != result) {
         cout << "no match:\nExpected: " <<
@@ -883,7 +1092,7 @@ void test1() {
         assert(false);
     }
     list.debug_print_list("********");
-//    list.debug_verify_data_integrity();
+    list.debug_verify_data_integrity();
 }
 
 void test2() {
@@ -893,24 +1102,11 @@ void test2() {
     list.insert_end(new Node(1));
     list.insert_end(new Node(2));
 
-    list.insert_end(new Node(3));
-    list.insert_end(new Node(1));
 
-    list.insert_end(new Node(2));
-    list.insert_end(new Node(4));
-
-    list.insert_end(new Node(1));
-    list.insert_end(new Node(7));
-
-    list.insert_end(new Node(1));
-    list.insert_end(new Node(8));
-
-    list.insert_end(new Node(1));
-    list.insert_end(new Node(1));
-    list.arrange_odd_even();
+    list.reverse_alt();
 
 
-    string expected = "1 3 2 1 1 1 2 1 4 7 8 1";
+    string expected = "2 1";
     string result = list.debug_to_string();
     if (expected != result) {
         cout << "no match:\nExpected: " <<
@@ -918,13 +1114,91 @@ void test2() {
         assert(false);
     }
     list.debug_print_list("********");
-//    list.debug_verify_data_integrity();
+    list.debug_verify_data_integrity();
+}
+
+void test3() {
+    cout << "\n\ntest3\n";
+    LinkedList list;
+
+    list.insert_end(new Node(1));
+
+
+    list.reverse_alt();
+
+
+    string expected = "1";
+    string result = list.debug_to_string();
+    if (expected != result) {
+        cout << "no match:\nExpected: " <<
+             expected << "\nResult  : " << result << "\n";
+        assert(false);
+    }
+    list.debug_print_list("********");
+    list.debug_verify_data_integrity();
+}
+
+void test4() {
+    cout << "\n\ntest4\n";
+    LinkedList list;
+
+    list.insert_end(new Node(1));
+    list.insert_end(new Node(1));
+    list.insert_end(new Node(2));
+    list.insert_end(new Node(2));
+    list.insert_end(new Node(2));
+    list.insert_end(new Node(2));
+    list.insert_end(new Node(2));
+    list.insert_end(new Node(2));
+    list.insert_end(new Node(2));
+    list.insert_end(new Node(2));
+    list.insert_end(new Node(6));
+    list.insert_end(new Node(6));
+    list.insert_end(new Node(6));
+    list.insert_end(new Node(6));
+    list.insert_end(new Node(6));
+    list.insert_end(new Node(6));
+    list.insert_end(new Node(6));
+    list.insert_end(new Node(6));
+    list.insert_end(new Node(0));
+    list.insert_end(new Node(0));
+    list.insert_end(new Node(0));
+    list.insert_end(new Node(10));
+
+    list.delete_all_repeated_sorted();
+
+
+    string expected = "10";
+    string result = list.debug_to_string();
+    if (expected != result) {
+        cout << "no match:\nExpected: " <<
+             expected << "\nResult  : " << result << "\n";
+        assert(false);
+    }
+    list.debug_print_list("********");
+    list.debug_verify_data_integrity();
 }
 
 
 int main() {
+    auto startTime1 = std::chrono::high_resolution_clock::now();
+
     test1();
     test2();
+    test3();
+//    test4();
+
+    // Stop the timer
+    auto endTime1 = std::chrono::high_resolution_clock::now();
+
+    // Calculate the duration
+    auto duration1 = std::chrono::duration_cast<std::chrono::microseconds>(endTime1 - startTime1);
+
+    std::cout << "Execution time 1111111: =" << "startTime1  " << startTime1.time_since_epoch().count()
+              << "   and endtime  " << endTime1.time_since_epoch().count()
+              << "   and duration is  " << duration1.count() << " us" << std::endl;
+
+
     cout << "\n\nNO RTE\n";
     return 0;
 }
