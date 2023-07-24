@@ -16,6 +16,8 @@ struct Node {
 
     Node(int value) : value(value) {}
 
+    Node() {}
+
     ~Node() {
         cout << "Destroy value: " << value << " at address " << this << "\n";
     }
@@ -311,28 +313,8 @@ public:
         debug_verify_data_integrity();
     }
 
-    void reverse() {
-        if (length == 0) {
-            cout << "ERROR:: No Nodes Dummy!" << endl;
-            return;
-        }
-        if (length == 1) {
-            cout << "ERROR:: length of one Linked lists are the same when reversed" << endl;
-            return;
-        }
-        head->next = nullptr;
-        for (int i = 1; i < length; i++) { // We used one since we're linking backwards. 1->0, 0->-1 is wrong
-            debug_data[i]->next = debug_data[i - 1];
-        }
-        std::reverse(debug_data.begin(), debug_data.end());
-        Node *tempNode = head;
-        head = tail;
-        tail = tempNode;
-        print();
-        debug_verify_data_integrity();
-    }
 
-    void reverse_alt() {
+    void reverse() {
         if (length <= 1) return;
 
         Node *prv = nullptr;
@@ -773,33 +755,36 @@ public:
         debug_verify_data_integrity();
     }
 
-
-    void remove_all_repeated_alt() {
-        if (length < 2)return;
-
-        insert_front(new Node(-1234));
-        tail = head;
-        Node *prv = head;
-        Node *curr = head->next;
-
-        while (curr) {
-            bool any_removed = false;
-            while (curr && curr->next && curr->value == curr->next->value) {
-                any_removed = true;
-                int block_value = curr->value;
-                while (curr->value == block_value) {
-                    curr = move_and_delete(curr);
-                }
+    void reverse_k(int k) {
+        if (length < k) return;
+        int arr_len = length / k;
+        if ((length % k) > 0) arr_len++;
+        LinkedList *arr = new LinkedList[arr_len];
+        Node *temp = head;
+        for (int j = 0; j < arr_len; j++) {
+            for (int i = 0; i < k; i++) {
+                if (!temp)break;
+                arr[j].insert_end(temp);
+                temp = temp->next;
+                arr[j].tail->next = nullptr;
             }
-
-            if (any_removed) {
-
-
-            } else {}
         }
+        for (int i = 0; i < arr_len; i++) {
+            arr[i].reverse();
+        }
+        for (int i = 0; i < arr_len; i++) {
+            arr[i].tail->next = arr[i + 1].head;
+        }
+        head = arr[0].head;
+        tail = arr[arr_len - 1].tail;
+        tail->next = nullptr;
 
 
+//        delete temp;
+        debug_verify_data_integrity();
+        cout << this->debug_to_string() << endl;
     }
+
 
     Node *get_previous(Node *target) {        // O(n) time - O(1) memory
         for (Node *cur = head, *prv = nullptr; cur; prv = cur, cur = cur->next) {
@@ -1081,10 +1066,11 @@ void test1() {
     list.insert_end(new Node(4));
     list.insert_end(new Node(5));
     list.insert_end(new Node(6));
+    list.insert_end(new Node(7));
 
 
-    list.reverse_alt();
-    string expected = "6 5 4 3 2 1";
+    list.reverse_k(3);
+    string expected = "3 2 1 6 5 4 7";
     string result = list.debug_to_string();
     if (expected != result) {
         cout << "no match:\nExpected: " <<
@@ -1103,7 +1089,7 @@ void test2() {
     list.insert_end(new Node(2));
 
 
-    list.reverse_alt();
+    list.reverse();
 
 
     string expected = "2 1";
@@ -1124,7 +1110,7 @@ void test3() {
     list.insert_end(new Node(1));
 
 
-    list.reverse_alt();
+    list.reverse();
 
 
     string expected = "1";
@@ -1184,8 +1170,8 @@ int main() {
     auto startTime1 = std::chrono::high_resolution_clock::now();
 
     test1();
-    test2();
-    test3();
+//    test2();
+//    test3();
 //    test4();
 
     // Stop the timer
